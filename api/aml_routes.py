@@ -4,7 +4,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Query, Path
 from pydantic import BaseModel
 from decimal import Decimal
-from . import dummy_data
+from . import data_generator as data
 
 class CustomerResponse(BaseModel):
     customer_id: str
@@ -38,7 +38,7 @@ async def get_customer_documents(
     """
     Retrieve all documents attached to a specific customer.
     """
-    return dummy_data.generate_documents(customer_id)
+    return data.generate_documents(customer_id)
 
 @router.get("/customers/{customer_id}/documents/summary")
 async def get_document_summary(
@@ -47,7 +47,7 @@ async def get_document_summary(
     """
     Get a summary of customer documents from an AML perspective.
     """
-    return dummy_data.generate_document_summary(customer_id)
+    return data.generate_document_summary(customer_id)
 
 @router.get("/customers/{customer_id}/transactions")
 async def get_transaction_summary(
@@ -58,7 +58,7 @@ async def get_transaction_summary(
     """
     Get customer transactions summarized by type over a specified period.
     """
-    return dummy_data.generate_transaction_summary(customer_id, start_date, end_date)
+    return data.generate_transaction_summary(customer_id, start_date, end_date)
 
 @router.get("/customers/{customer_id}/alerts")
 async def get_customer_alerts(
@@ -67,7 +67,7 @@ async def get_customer_alerts(
     """
     Get all historical alerts that have resulted in a case.
     """
-    return dummy_data.generate_alerts(customer_id)
+    return data.generate_alerts(customer_id)
 
 @router.get("/customers/{customer_id}/relationships")
 async def get_customer_relationships(
@@ -76,7 +76,7 @@ async def get_customer_relationships(
     """
     Get all relationships attached to a particular customer.
     """
-    return dummy_data.generate_relationships(customer_id)
+    return data.generate_relationships(customer_id)
 
 @router.get("/customers/{customer_id}/counterparties")
 async def get_customer_counterparties(
@@ -86,7 +86,7 @@ async def get_customer_counterparties(
     """
     Get all counterparties a customer has interacted with over a period.
     """
-    return dummy_data.generate_counterparties(customer_id, months)
+    return data.generate_counterparties(customer_id, months)
 
 @router.get("/customers/{customer_id}/touchpoints")
 async def get_customer_touchpoints(
@@ -96,7 +96,7 @@ async def get_customer_touchpoints(
     """
     Get all bank touchpoints for a customer over a period.
     """
-    return dummy_data.generate_touchpoints(customer_id, months)
+    return data.generate_touchpoints(customer_id, months)
 
 @router.get("/customers/{customer_id}/business-locations")
 async def get_business_locations(
@@ -105,7 +105,7 @@ async def get_business_locations(
     """
     Get all places where the customer conducts business.
     """
-    return dummy_data.generate_business_locations(customer_id)
+    return data.generate_business_locations(customer_id)
 
 @router.get("/countries/{country_code}/risk-assessment")
 async def get_country_risk(
@@ -114,7 +114,7 @@ async def get_country_risk(
     """
     Check if a country is rated high risk.
     """
-    return dummy_data.generate_country_risk(country_code)
+    return data.generate_country_risk(country_code)
 
 @router.get("/customers/{customer_id}/pep-counterparties")
 async def get_pep_counterparties(
@@ -123,7 +123,7 @@ async def get_pep_counterparties(
     """
     Get politically exposed counterparties for a customer.
     """
-    return dummy_data.generate_pep_counterparties(customer_id)
+    return data.generate_pep_counterparties(customer_id)
 
 @router.get("/customers/{customer_id}/subsidiaries")
 async def get_customer_subsidiaries(
@@ -132,7 +132,7 @@ async def get_customer_subsidiaries(
     """
     Get all subsidiaries and their transactions for a customer.
     """
-    return dummy_data.generate_subsidiary_info(customer_id)
+    return data.generate_subsidiary_info(customer_id)
 
 @router.get("/customers/{customer_id}/alert-scenarios")
 async def get_customer_alert_scenarios(
@@ -141,7 +141,7 @@ async def get_customer_alert_scenarios(
     """
     Get all scenarios used to generate alerts for a customer.
     """
-    return dummy_data.generate_alert_scenarios(customer_id)
+    return data.generate_alert_scenarios(customer_id)
 
 @router.get("/counterparties/{counterparty_id}/related-customers")
 async def get_related_customers(
@@ -150,7 +150,7 @@ async def get_related_customers(
     """
     Get all bank customers who have interacted with a counterparty.
     """
-    return dummy_data.generate_related_customers(counterparty_id)
+    return data.generate_related_customers(counterparty_id)
 
 @router.get("/scenarios/{scenario_id}")
 async def get_scenario_details(
@@ -159,7 +159,7 @@ async def get_scenario_details(
     """
     Get detailed description and parameters for a money laundering scenario.
     """
-    return dummy_data.generate_scenario_details(scenario_id)
+    return data.generate_scenario_details(scenario_id)
 
 @router.get("/scenarios/{scenario_id}/thresholds")
 async def get_scenario_thresholds(
@@ -168,7 +168,7 @@ async def get_scenario_thresholds(
     """
     Get all thresholds for an AML scenario.
     """
-    return dummy_data.generate_scenario_thresholds(scenario_id)
+    return data.generate_scenario_thresholds(scenario_id)
 
 @router.get("/alerts/{alert_id}/transactions", response_model=AlertTransactionsResponse)
 async def get_alert_transactions_detail(
@@ -187,7 +187,7 @@ async def get_alert_transactions_detail(
     - alert_id: Unique identifier of the alert
     - include_related: If true, includes related transactions from the same time period
     """
-    return dummy_data.generate_alert_transactions_detail(alert_id, include_related)
+    return data.generate_alert_transactions_detail(alert_id, include_related)
 
 @router.get("/alerts/{alert_id}/customer", response_model=CustomerResponse)
 async def get_alert_customer_details(
@@ -201,7 +201,7 @@ async def get_alert_customer_details(
     - All accounts associated with the customer
     - Account details (type, status, currency, dates)
     """
-    return dummy_data.generate_alert_customer_details(alert_id)
+    return data.generate_alert_customer_details(alert_id)
 
 @router.get("/transactions/{transaction_id}/outlier-analysis")
 async def get_transaction_outlier_analysis(
@@ -215,7 +215,7 @@ async def get_transaction_outlier_analysis(
     """
     Analyze if a transaction is an outlier based on different criteria.
     """
-    return dummy_data.generate_outlier_analysis(transaction_id, analysis_type)
+    return data.generate_outlier_analysis(transaction_id, analysis_type)
 
 @router.get("/counterparties/risk-assessment")
 async def get_counterparties_risk_assessment(
@@ -237,4 +237,4 @@ async def get_counterparties_risk_assessment(
     - risk_level: Optional filter by risk level
     - is_pep: Optional filter for politically exposed persons
     """
-    return dummy_data.generate_counterparties_risk_assessment(customer_id, risk_level, is_pep)
+    return data.generate_counterparties_risk_assessment(customer_id, risk_level, is_pep)
