@@ -1,0 +1,650 @@
+{
+  "version": "1.0.0",
+  "base_url": "/api/v1",
+  "endpoints": [
+    {
+      "endpoint": "/customers/{customer_id}/documents",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Retrieves all documents associated with a specific customer for AML purposes.",
+        "Documents can include identification verification, proof of address, bank statements, and tax returns.",
+        "Each document includes metadata such as document type, verification status, and submission date."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/documents",
+        "response": {
+          "documents": [
+            {
+              "document_id": "DOC_001",
+              "document_type": "ID_VERIFICATION",
+              "status": "VERIFIED",
+              "submission_date": "2024-01-06T10:00:00Z",
+              "verification_date": "2024-01-06T11:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/documents/summary",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Provides a comprehensive summary of all customer documents from an AML perspective.",
+        "Includes verification status, document completeness, and risk indicators.",
+        "Helps in quick assessment of customer documentation compliance."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/documents/summary",
+        "response": {
+          "total_documents": 4,
+          "verification_status": {
+            "verified": 3,
+            "pending": 1,
+            "rejected": 0
+          },
+          "missing_documents": ["PROOF_OF_INCOME"],
+          "last_update": "2024-01-06T10:00:00Z"
+        }
+      }
+    },
+    {
+      "endpoint": "/alerts/{alert_id}/customer",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "alert_id": {
+            "type": "string",
+            "description": "Unique identifier of the alert"
+          }
+        }
+      },
+      "description": [
+        "Returns comprehensive customer information and all associated accounts for a given alert.",
+        "Provides essential details needed during alert investigation including customer risk rating and account portfolio.",
+        "Includes both active and closed accounts with their complete history and status."
+      ],
+      "example": {
+        "request": "GET /api/v1/alerts/ALERT_789/customer",
+        "response": {
+          "customer_id": "CUST_12345",
+          "name": "John Smith",
+          "risk_rating": "HIGH",
+          "country": "US",
+          "created_at": "2024-01-06T10:00:00Z",
+          "accounts": [
+            {
+              "account_id": "ACC_001",
+              "account_type": "CHECKING",
+              "currency": "USD",
+              "status": "ACTIVE",
+              "opened_date": "2023-01-06T10:00:00Z",
+              "closed_date": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/alerts/{alert_id}/transactions",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "alert_id": {
+            "type": "string",
+            "description": "Unique identifier of the alert"
+          }
+        },
+        "query": {
+          "include_related": {
+            "type": "boolean",
+            "description": "Include related transactions from the same time period",
+            "default": true
+          }
+        }
+      },
+      "description": [
+        "Retrieves all transactions related to an alert, including both triggering and contextual transactions.",
+        "Helps investigators understand transaction patterns and total exposure by providing comprehensive transaction details.",
+        "Includes transaction statistics and summary information to aid in alert investigation."
+      ],
+      "example": {
+        "request": "GET /api/v1/alerts/ALERT_789/transactions?include_related=true",
+        "response": {
+          "alert_id": "ALERT_789",
+          "alert_type": "STRUCTURED_TRANSACTIONS",
+          "triggering_transactions": [
+            {
+              "transaction_id": "TXN_001",
+              "transaction_type": "WIRE_TRANSFER",
+              "amount": "50000.00",
+              "currency": "USD",
+              "date": "2024-01-06T10:00:00Z"
+            }
+          ],
+          "related_transactions": [
+            {
+              "transaction_id": "TXN_002",
+              "transaction_type": "CASH_DEPOSIT",
+              "amount": "15000.00",
+              "currency": "USD",
+              "date": "2024-01-05T10:00:00Z"
+            }
+          ],
+          "total_transaction_count": 2,
+          "total_transaction_amount": "65000.00",
+          "time_period": "2024-01-05 to 2024-01-06"
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/transactions",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start date for the transaction period"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End date for the transaction period"
+          }
+        }
+      },
+      "description": [
+        "Retrieves a summary of customer transactions over a specified time period.",
+        "Groups transactions by type and provides aggregate statistics such as total count and amount.",
+        "Useful for understanding customer transaction patterns and identifying unusual activity."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/transactions?start_date=2024-01-01T00:00:00Z&end_date=2024-01-06T23:59:59Z",
+        "response": {
+          "total_count": 10,
+          "total_amount": "125000.00",
+          "average_amount": "12500.00",
+          "currency": "USD",
+          "by_type": {
+            "WIRE_TRANSFER": 3,
+            "CASH_DEPOSIT": 4,
+            "CHECK_DEPOSIT": 3
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/counterparties",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to look back",
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Retrieves all counterparties that a customer has transacted with over a specified period.",
+        "Provides detailed information about transaction frequency, amounts, and patterns with each counterparty.",
+        "Helps identify unusual relationships or potential risk indicators in customer's transaction network."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/counterparties?months=6",
+        "response": {
+          "counterparties": [
+            {
+              "counterparty_id": "CP_001",
+              "name": "ABC Corp",
+              "transaction_count": 15,
+              "total_amount": "250000.00",
+              "first_transaction": "2023-07-06T10:00:00Z",
+              "last_transaction": "2024-01-06T10:00:00Z",
+              "risk_score": 0.3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/touchpoints",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to look back",
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Returns all interactions between the customer and the bank over a specified period.",
+        "Includes branch visits, customer service calls, online banking sessions, and other touchpoints.",
+        "Useful for understanding customer behavior and identifying changes in interaction patterns."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/touchpoints?months=6",
+        "response": {
+          "touchpoints": [
+            {
+              "touchpoint_id": "TP_001",
+              "type": "BRANCH_VISIT",
+              "location": "Main Branch",
+              "timestamp": "2024-01-06T10:00:00Z",
+              "duration": 30,
+              "purpose": "CASH_DEPOSIT"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/business-locations",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Retrieves all locations where the customer conducts business activities.",
+        "Includes both physical locations and jurisdictions of business operations.",
+        "Helps assess geographic risk and identify potential high-risk jurisdictions."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/business-locations",
+        "response": {
+          "locations": [
+            {
+              "location_id": "LOC_001",
+              "type": "OFFICE",
+              "address": "123 Main St, New York, NY",
+              "country": "US",
+              "activity_level": "HIGH",
+              "risk_score": 0.2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/countries/{country_code}/risk-assessment",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "country_code": {
+            "type": "string",
+            "description": "ISO country code"
+          }
+        }
+      },
+      "description": [
+        "Assesses the AML risk level associated with a specific country.",
+        "Considers factors such as regulatory environment, corruption index, and sanctions status.",
+        "Provides detailed risk metrics and compliance requirements for the country."
+      ],
+      "example": {
+        "request": "GET /api/v1/countries/US/risk-assessment",
+        "response": {
+          "country_code": "US",
+          "risk_rating": "LOW",
+          "sanctions_status": "NONE",
+          "risk_factors": {
+            "regulatory_quality": 0.9,
+            "corruption_index": 0.8,
+            "aml_framework": 0.85
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/pep-counterparties",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Identifies all Politically Exposed Persons (PEPs) that the customer has transacted with.",
+        "Provides details about the nature of relationships and transaction patterns with PEPs.",
+        "Critical for enhanced due diligence and regulatory compliance."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/pep-counterparties",
+        "response": {
+          "pep_counterparties": [
+            {
+              "counterparty_id": "PEP_001",
+              "name": "John Doe",
+              "position": "Senior Government Official",
+              "country": "UK",
+              "risk_level": "HIGH",
+              "last_transaction_date": "2024-01-06T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/subsidiaries",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Returns information about all subsidiaries and their transactions for a customer.",
+        "Includes ownership structure, transaction patterns, and risk assessments.",
+        "Helps understand complex corporate structures and associated risks."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/subsidiaries",
+        "response": {
+          "subsidiaries": [
+            {
+              "subsidiary_id": "SUB_001",
+              "name": "XYZ Corp",
+              "ownership_percentage": 75.5,
+              "country": "US",
+              "risk_rating": "MEDIUM",
+              "transaction_volume": "1000000.00"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/alert-scenarios",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        }
+      },
+      "description": [
+        "Retrieves all AML scenarios that are currently monitoring the customer.",
+        "Includes scenario parameters, thresholds, and historical alerts.",
+        "Used for understanding monitoring coverage and risk detection strategies."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/alert-scenarios",
+        "response": {
+          "scenarios": [
+            {
+              "scenario_id": "SCN_001",
+              "name": "Structured Transactions",
+              "description": "Detects potential structuring of transactions below reporting thresholds",
+              "threshold": 10000.00,
+              "lookback_period": 30,
+              "enabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/counterparties/{counterparty_id}/related-customers",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "counterparty_id": {
+            "type": "string",
+            "description": "Unique identifier of the counterparty"
+          }
+        }
+      },
+      "description": [
+        "Identifies all bank customers who have transacted with a specific counterparty.",
+        "Helps detect potential networks of related customers and unusual transaction patterns.",
+        "Useful for investigating potential money laundering networks."
+      ],
+      "example": {
+        "request": "GET /api/v1/counterparties/CP_001/related-customers",
+        "response": {
+          "related_customers": [
+            {
+              "customer_id": "CUST_001",
+              "relationship_type": "TRANSACTION_COUNTERPARTY",
+              "transaction_count": 10,
+              "total_amount": "100000.00",
+              "first_transaction": "2023-07-06T10:00:00Z",
+              "last_transaction": "2024-01-06T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/scenarios/{scenario_id}",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "scenario_id": {
+            "type": "string",
+            "description": "Unique identifier of the scenario"
+          }
+        }
+      },
+      "description": [
+        "Provides detailed information about a specific AML monitoring scenario.",
+        "Includes scenario logic, parameters, thresholds, and performance metrics.",
+        "Used for scenario tuning and effectiveness monitoring."
+      ],
+      "example": {
+        "request": "GET /api/v1/scenarios/SCN_001",
+        "response": {
+          "scenario_id": "SCN_001",
+          "name": "Structured Transactions",
+          "description": "Detects potential structuring of transactions below reporting thresholds",
+          "parameters": {
+            "threshold": 10000.00,
+            "period_days": 30,
+            "min_transactions": 3
+          },
+          "performance": {
+            "true_positive_rate": 0.75,
+            "false_positive_rate": 0.15
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/scenarios/{scenario_id}/thresholds",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "scenario_id": {
+            "type": "string",
+            "description": "Unique identifier of the scenario"
+          }
+        }
+      },
+      "description": [
+        "Returns all thresholds and parameters used in an AML monitoring scenario.",
+        "Includes historical threshold values and their effectiveness metrics.",
+        "Essential for scenario tuning and optimization."
+      ],
+      "example": {
+        "request": "GET /api/v1/scenarios/SCN_001/thresholds",
+        "response": {
+          "thresholds": [
+            {
+              "parameter": "transaction_amount",
+              "value": 10000.00,
+              "effective_date": "2024-01-01T00:00:00Z",
+              "previous_value": 9500.00,
+              "alert_volume_impact": -15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "endpoint": "/transactions/{transaction_id}/outlier-analysis",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "transaction_id": {
+            "type": "string",
+            "description": "Unique identifier of the transaction"
+          }
+        },
+        "query": {
+          "analysis_type": {
+            "type": "string",
+            "description": "Type of analysis to perform",
+            "enum": ["customer_6month", "customer_daily", "same_day_transfers"]
+          }
+        }
+      },
+      "description": [
+        "Performs statistical analysis to determine if a transaction is an outlier.",
+        "Supports multiple analysis types including customer history and peer comparison.",
+        "Provides detailed statistical metrics and comparison data."
+      ],
+      "example": {
+        "request": "GET /api/v1/transactions/TXN_001/outlier-analysis?analysis_type=customer_6month",
+        "response": {
+          "transaction_id": "TXN_001",
+          "analysis_type": "customer_6month",
+          "is_outlier": true,
+          "statistics": {
+            "mean": 5000.00,
+            "std_dev": 1000.00,
+            "z_score": 3.5,
+            "percentile": 99.9
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/counterparties/risk-assessment",
+      "method": "GET",
+      "summary": "Get Risk Assessment for Counterparties",
+      "description": "Retrieve comprehensive risk assessment information for all counterparties, including their risk levels, PEP status, and transaction patterns. This endpoint helps in identifying high-risk relationships and politically exposed persons among your counterparties.",
+      "parameters": {
+        "query": [
+          {
+            "name": "customer_id",
+            "type": "string",
+            "required": false,
+            "description": "Filter counterparties for a specific customer"
+          },
+          {
+            "name": "risk_level",
+            "type": "string",
+            "required": false,
+            "description": "Filter by risk level (HIGH, MEDIUM, LOW)"
+          },
+          {
+            "name": "is_pep",
+            "type": "boolean",
+            "required": false,
+            "description": "Filter politically exposed persons"
+          }
+        ]
+      },
+      "responses": {
+        "200": {
+          "description": "Successful response with counterparty risk assessments",
+          "example": {
+            "total_count": 2,
+            "filters_applied": {
+              "customer_id": "CUST_001",
+              "risk_level": "HIGH",
+              "is_pep": true
+            },
+            "counterparties": [
+              {
+                "counterparty_id": "CP_001",
+                "name": "Counterparty 1",
+                "business_type": "CORPORATION",
+                "country": "US",
+                "risk_assessment": {
+                  "overall_risk_level": "HIGH",
+                  "risk_factors": {
+                    "country_risk": 0.8,
+                    "business_type_risk": 0.7,
+                    "transaction_pattern_risk": 0.9,
+                    "adverse_media_risk": 0.6
+                  }
+                },
+                "pep_information": {
+                  "is_pep": true,
+                  "position": "Senior Government Official",
+                  "jurisdiction": "US",
+                  "screening_date": "2025-01-06T22:10:20-05:00"
+                },
+                "transaction_summary": {
+                  "total_transactions": 45,
+                  "total_amount": 750000.00,
+                  "last_transaction_date": "2025-01-05T22:10:20-05:00"
+                },
+                "last_review": {
+                  "date": "2024-12-06T22:10:20-05:00",
+                  "reviewed_by": "John Doe",
+                  "next_review_date": "2025-03-06T22:10:20-05:00"
+                },
+                "customer_relationship": {
+                  "customer_id": "CUST_001",
+                  "relationship_type": "VENDOR",
+                  "relationship_start_date": "2024-03-06T22:10:20-05:00"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

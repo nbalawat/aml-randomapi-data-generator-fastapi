@@ -1,0 +1,1616 @@
+openapi: 3.0.0
+info:
+  title: AML Analysis API
+  description: |
+    API for Anti-Money Laundering (AML) analysis and data retrieval.
+    
+    ## Overview
+    This API provides comprehensive endpoints for AML investigation and compliance:
+    - Customer document management and analysis
+    - Transaction monitoring and outlier detection
+    - Alert management and case tracking
+    - Customer relationship mapping
+    - PEP screening and risk assessment
+    - Business location analysis
+    - Scenario management and threshold configuration
+    
+    ## Authentication
+    All API endpoints require authentication using Bearer token:
+    ```
+    Authorization: Bearer <your_token>
+    ```
+    
+    ## Rate Limiting
+    - 1000 requests per hour per API key
+    - 10 concurrent requests per API key
+    
+    ## Error Codes
+    - 400: Bad Request - Invalid input parameters
+    - 401: Unauthorized - Missing or invalid authentication
+    - 403: Forbidden - Insufficient permissions
+    - 404: Not Found - Resource not found
+    - 429: Too Many Requests - Rate limit exceeded
+    - 500: Internal Server Error - Server-side error
+  version: 1.0.0
+  contact:
+    name: AML API Support
+    email: support@amlapiexample.com
+    url: https://amlapiexample.com/support
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.amlapiexample.com/v1
+    description: Production server
+
+tags:
+  - name: Documents
+    description: Customer document management and analysis
+  - name: Transactions
+    description: Transaction monitoring and analysis
+  - name: Alerts
+    description: Alert management and investigation
+  - name: Customers
+    description: Customer relationship and profile management
+  - name: Risk Assessment
+    description: Risk assessment and scoring
+  - name: Scenarios
+    description: AML scenario management
+  - name: Alert Investigation
+    description: Alert investigation and analysis
+
+paths:
+  /customers/{customer_id}/documents:
+    get:
+      tags:
+        - Documents
+      summary: Retrieve customer documents
+      description: |
+        Get all documents attached to a specific customer. Documents can include:
+        - Identification documents
+        - Proof of address
+        - Bank statements
+        - Tax returns
+        - Business registration documents
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "CUST123456"
+          description: The unique identifier of the customer
+        - name: document_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ID_VERIFICATION, PROOF_OF_ADDRESS, BANK_STATEMENT, TAX_RETURN]
+          description: Filter documents by type
+      responses:
+        '200':
+          description: List of customer documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+              example:
+                - id: "DOC123"
+                  type: "ID_VERIFICATION"
+                  date_created: "2024-12-01T10:00:00Z"
+                  content: "Passport verification document"
+                - id: "DOC124"
+                  type: "PROOF_OF_ADDRESS"
+                  date_created: "2024-12-02T11:30:00Z"
+                  content: "Utility bill verification"
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: "CUSTOMER_NOT_FOUND"
+                message: "Customer with ID CUST123456 not found"
+
+  /customers/{customer_id}/documents/summary:
+    get:
+      tags:
+        - Documents
+        - Risk Assessment
+      summary: Get AML document summary
+      description: |
+        Provide a comprehensive summary of customer documents from an AML perspective.
+        The summary includes:
+        - Overall risk level based on documentation
+        - Key findings from document analysis
+        - Recommendations for additional documentation or verification
+        - Document completeness assessment
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "CUST123456"
+      responses:
+        '200':
+          description: AML summary of documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentSummary'
+              example:
+                risk_level: "MEDIUM"
+                key_findings:
+                  - "Multiple address changes in short period"
+                  - "Incomplete business ownership documentation"
+                recommendations:
+                  - "Request additional ownership verification"
+                  - "Schedule customer interview"
+
+  /customers/{customer_id}/transactions:
+    get:
+      tags:
+        - Transactions
+      summary: Get customer transactions
+      description: |
+        Get transactions summarized by type over a specified period.
+        Features:
+        - Aggregated transaction counts and amounts by type
+        - Multiple currency support
+        - Customizable date range
+        - Transaction pattern analysis
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "CUST123456"
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2024-01-01"
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2024-12-31"
+        - name: currency
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [USD, EUR, GBP]
+          description: Filter transactions by currency
+      responses:
+        '200':
+          description: Transaction summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSummary'
+              example:
+                period_start: "2024-01-01"
+                period_end: "2024-12-31"
+                summaries:
+                  - type: "WIRE"
+                    count: 50
+                    total_amount: 1000000
+                    currency: "USD"
+                  - type: "ACH"
+                    count: 100
+                    total_amount: 500000
+                    currency: "USD"
+
+  /transactions/{transaction_id}/outlier-analysis:
+    get:
+      tags:
+        - Transactions
+        - Risk Assessment
+      summary: Get transaction outlier analysis
+      description: |
+        Analyze if a transaction is an outlier based on different criteria:
+        
+        1. Customer 6-month history (customer_6month):
+           - Compares against all customer transactions in last 6 months
+           - Considers amount, frequency, and transaction type
+           - Calculates Z-score for amount deviation
+        
+        2. Customer daily pattern (customer_daily):
+           - Analyzes typical daily transaction patterns
+           - Considers time of day, amount, and recipient
+           - Flags unusual timing or amounts
+        
+        3. Same-day transfers (same_day_transfers):
+           - Compares with other transfers on the same day
+           - Focuses on similar transaction types
+           - Identifies unusual patterns in transfer timing
+      parameters:
+        - name: transaction_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "TXN123456"
+        - name: analysis_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [customer_6month, customer_daily, same_day_transfers]
+          example: "customer_6month"
+          description: Type of outlier analysis to perform
+      responses:
+        '200':
+          description: Outlier analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutlierAnalysis'
+              example:
+                transaction_id: "TXN123456"
+                is_outlier: true
+                confidence_score: 0.95
+                analysis_type: "customer_6month"
+                factors:
+                  - "Amount significantly higher than average"
+                  - "Unusual timing of transaction"
+                statistics:
+                  mean: 50000
+                  std_dev: 10000
+                  z_score: 3.5
+
+  /alerts/{alert_id}/customer:
+    get:
+      tags:
+        - Alert Investigation
+      summary: Get customer details for an alert
+      description: |
+        Returns comprehensive customer information and all associated accounts for a given alert.
+        
+        This endpoint provides essential customer information needed during alert investigation:
+        * Complete customer profile and risk information
+        * List of all accounts (both active and closed)
+        * Detailed account information including types, currencies, and status
+        * Account lifecycle information (opening/closing dates)
+        
+        Use this endpoint to quickly understand the customer context when investigating an alert.
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the alert
+      responses:
+        '200':
+          description: Successfully retrieved customer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
+              example:
+                customer_id: "CUST_12345678"
+                name: "John Smith"
+                risk_rating: "HIGH"
+                country: "US"
+                created_at: "2024-01-06T10:00:00Z"
+                accounts:
+                  - account_id: "ACC_1_12345678"
+                    account_type: "CHECKING"
+                    currency: "USD"
+                    status: "ACTIVE"
+                    opened_date: "2023-01-06T10:00:00Z"
+                    closed_date: null
+                  - account_id: "ACC_2_12345678"
+                    account_type: "SAVINGS"
+                    currency: "USD"
+                    status: "ACTIVE"
+                    opened_date: "2023-07-06T10:00:00Z"
+                    closed_date: null
+
+  /alerts/{alert_id}/transactions:
+    get:
+      tags:
+        - Alert Investigation
+      summary: Get transactions related to an alert
+      description: |
+        Retrieves all transactions related to an alert, including both triggering and contextual transactions.
+        
+        This endpoint helps investigators understand:
+        * Which transactions triggered the alert
+        * Related transactions from the same time period
+        * Transaction patterns and behavior
+        * Total exposure and activity volume
+        
+        The response includes comprehensive transaction details and summary statistics to aid in alert investigation.
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the alert
+        - name: include_related
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Include additional related transactions from the same time period
+      responses:
+        '200':
+          description: Successfully retrieved alert transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertTransactionsResponse'
+              example:
+                alert_id: "ALERT_12345678"
+                alert_type: "STRUCTURED_TRANSACTIONS"
+                triggering_transactions:
+                  - transaction_id: "TXN_TRIG_1_12345678"
+                    transaction_type: "WIRE_TRANSFER"
+                    amount: "50000.00"
+                    currency: "USD"
+                    date: "2024-01-06T10:00:00Z"
+                  - transaction_id: "TXN_TRIG_2_12345678"
+                    transaction_type: "WIRE_TRANSFER"
+                    amount: "45000.00"
+                    currency: "USD"
+                    date: "2024-01-06T12:00:00Z"
+                related_transactions:
+                  - transaction_id: "TXN_REL_1_12345678"
+                    transaction_type: "CASH_DEPOSIT"
+                    amount: "15000.00"
+                    currency: "USD"
+                    date: "2024-01-05T10:00:00Z"
+                total_transaction_count: 3
+                total_transaction_amount: "110000.00"
+                time_period: "2024-01-05 to 2024-01-06"
+
+components:
+  schemas:
+    Document:
+      type: object
+      description: Represents a customer document with metadata
+      required:
+        - id
+        - type
+        - date_created
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the document
+          example: "DOC123"
+        type:
+          type: string
+          description: Type of document
+          enum:
+            - ID_VERIFICATION
+            - PROOF_OF_ADDRESS
+            - BANK_STATEMENT
+            - TAX_RETURN
+          example: "ID_VERIFICATION"
+        date_created:
+          type: string
+          format: date-time
+          description: Document creation timestamp
+          example: "2024-12-01T10:00:00Z"
+        content:
+          type: string
+          description: Document content or description
+          example: "Passport verification document"
+        metadata:
+          type: object
+          description: Additional document metadata
+          properties:
+            source:
+              type: string
+              example: "CUSTOMER_UPLOAD"
+            verified:
+              type: boolean
+              example: true
+            verification_date:
+              type: string
+              format: date-time
+              example: "2024-12-02T10:00:00Z"
+
+    DocumentSummary:
+      type: object
+      description: Summary of customer documents from AML perspective
+      required:
+        - risk_level
+        - key_findings
+        - recommendations
+      properties:
+        risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          description: Overall risk level based on documentation
+          example: "MEDIUM"
+        key_findings:
+          type: array
+          description: List of important findings from document analysis
+          items:
+            type: string
+          example:
+            - "Multiple address changes in short period"
+            - "Incomplete business ownership documentation"
+        recommendations:
+          type: array
+          description: Recommended actions based on findings
+          items:
+            type: string
+          example:
+            - "Request additional ownership verification"
+            - "Schedule customer interview"
+        completeness_score:
+          type: number
+          description: Document completeness score (0-100)
+          minimum: 0
+          maximum: 100
+          example: 85
+        last_review_date:
+          type: string
+          format: date-time
+          description: Last document review date
+          example: "2024-12-01T10:00:00Z"
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: "CUSTOMER_NOT_FOUND"
+        message:
+          type: string
+          description: Error message
+          example: "Customer with ID CUST123456 not found"
+        details:
+          type: object
+          description: Additional error details
+          example:
+            timestamp: "2024-12-01T10:00:00Z"
+            request_id: "REQ123456"
+
+    Alert:
+      type: object
+      description: Represents an AML alert with case information
+      required:
+        - id
+        - date_created
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the alert
+          example: "ALERT123"
+        date_created:
+          type: string
+          format: date-time
+          description: Alert creation timestamp
+          example: "2024-12-01T10:00:00Z"
+        type:
+          type: string
+          description: Type of alert
+          enum:
+            - SUSPICIOUS_ACTIVITY
+            - LARGE_TRANSACTION
+            - PATTERN_DEVIATION
+          example: "SUSPICIOUS_ACTIVITY"
+        status:
+          type: string
+          description: Current status of the alert
+          enum:
+            - OPEN
+            - CLOSED
+            - UNDER_REVIEW
+          example: "OPEN"
+        risk_score:
+          type: number
+          description: Risk score (0-100)
+          minimum: 0
+          maximum: 100
+          example: 75.5
+        case_id:
+          type: string
+          description: Associated case identifier
+          example: "CASE456"
+
+    TransactionSummary:
+      type: object
+      description: Summary of customer transactions by type
+      required:
+        - period_start
+        - period_end
+        - summaries
+      properties:
+        period_start:
+          type: string
+          format: date
+          description: Start date of the analysis period
+          example: "2024-01-01"
+        period_end:
+          type: string
+          format: date
+          description: End date of the analysis period
+          example: "2024-12-31"
+        summaries:
+          type: array
+          description: Transaction summaries by type
+          items:
+            type: object
+            required:
+              - type
+              - count
+              - total_amount
+              - currency
+            properties:
+              type:
+                type: string
+                description: Transaction type
+                enum: [WIRE, ACH, CHECK, CASH]
+                example: "WIRE"
+              count:
+                type: integer
+                description: Number of transactions
+                minimum: 0
+                example: 50
+              total_amount:
+                type: number
+                description: Total transaction amount
+                minimum: 0
+                example: 1000000
+              currency:
+                type: string
+                description: Currency code
+                enum: [USD, EUR, GBP]
+                example: "USD"
+
+    Relationship:
+      type: object
+      description: Represents a relationship between entities
+      required:
+        - id
+        - type
+        - related_entity
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the relationship
+          example: "REL123"
+        type:
+          type: string
+          description: Type of relationship
+          enum:
+            - OWNER
+            - DIRECTOR
+            - BENEFICIAL_OWNER
+            - AUTHORIZED_SIGNER
+          example: "OWNER"
+        related_entity:
+          type: object
+          description: Details of the related entity
+          required:
+            - id
+            - name
+            - type
+          properties:
+            id:
+              type: string
+              description: Entity identifier
+              example: "ENT456"
+            name:
+              type: string
+              description: Entity name
+              example: "Acme Corporation"
+            type:
+              type: string
+              description: Entity type
+              enum:
+                - INDIVIDUAL
+                - CORPORATION
+                - PARTNERSHIP
+              example: "CORPORATION"
+        relationship_strength:
+          type: string
+          description: Strength of the relationship
+          enum: [WEAK, MODERATE, STRONG]
+          example: "STRONG"
+
+    Counterparty:
+      type: object
+      description: Information about a transaction counterparty
+      required:
+        - id
+        - name
+        - country
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the counterparty
+          example: "CP123"
+        name:
+          type: string
+          description: Counterparty name
+          example: "Global Trading Ltd"
+        country:
+          type: string
+          description: Country code
+          example: "US"
+        risk_level:
+          type: string
+          description: Risk assessment level
+          enum: [LOW, MEDIUM, HIGH]
+          example: "MEDIUM"
+        transaction_count:
+          type: integer
+          description: Number of transactions with this counterparty
+          minimum: 0
+          example: 50
+        total_amount:
+          type: number
+          description: Total transaction amount
+          minimum: 0
+          example: 1000000
+        currency:
+          type: string
+          description: Currency code
+          enum: [USD, EUR, GBP]
+          example: "USD"
+
+    Touchpoint:
+      type: object
+      description: Customer interaction with the bank
+      required:
+        - id
+        - date
+        - type
+        - channel
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the touchpoint
+          example: "TP123"
+        date:
+          type: string
+          format: date-time
+          description: Interaction timestamp
+          example: "2024-12-01T10:00:00Z"
+        type:
+          type: string
+          description: Type of interaction
+          enum:
+            - BRANCH_VISIT
+            - PHONE_CALL
+            - EMAIL
+            - ONLINE_BANKING
+          example: "BRANCH_VISIT"
+        channel:
+          type: string
+          description: Communication channel
+          enum:
+            - IN_PERSON
+            - PHONE
+            - DIGITAL
+            - ATM
+          example: "IN_PERSON"
+        description:
+          type: string
+          description: Details of the interaction
+          example: "Customer visited branch for account review"
+        location:
+          type: string
+          description: Location of interaction
+          example: "NEW_YORK"
+
+    BusinessLocation:
+      type: object
+      description: Business location information
+      required:
+        - country
+        - city
+        - activity_type
+      properties:
+        country:
+          type: string
+          description: Country code
+          example: "US"
+        city:
+          type: string
+          description: City name
+          example: "New York"
+        activity_type:
+          type: string
+          description: Type of business activity
+          enum:
+            - RETAIL
+            - WHOLESALE
+            - MANUFACTURING
+            - SERVICES
+          example: "RETAIL"
+        transaction_volume:
+          type: number
+          description: Transaction volume at this location
+          minimum: 0
+          example: 5000000
+        risk_score:
+          type: number
+          description: Location risk score (0-100)
+          minimum: 0
+          maximum: 100
+          example: 45.5
+
+    CountryRisk:
+      type: object
+      description: Country risk assessment
+      required:
+        - country_code
+        - risk_rating
+        - factors
+      properties:
+        country_code:
+          type: string
+          description: ISO country code
+          example: "US"
+        risk_rating:
+          type: string
+          description: Overall risk rating
+          enum: [LOW, MEDIUM, HIGH]
+          example: "LOW"
+        factors:
+          type: array
+          description: Risk factors considered
+          items:
+            type: string
+          example:
+            - "Strong regulatory framework"
+            - "Effective AML controls"
+        last_updated:
+          type: string
+          format: date
+          description: Last assessment date
+          example: "2024-12-01"
+
+    PEPCounterparty:
+      type: object
+      description: Politically Exposed Person counterparty
+      required:
+        - id
+        - name
+        - pep_type
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "PEP123"
+        name:
+          type: string
+          description: PEP name
+          example: "John Smith"
+        pep_type:
+          type: string
+          description: Type of PEP
+          enum:
+            - POLITICIAN
+            - DIPLOMAT
+            - MILITARY
+            - STATE_OWNED_ENTITY
+          example: "POLITICIAN"
+        risk_level:
+          type: string
+          description: Risk assessment level
+          enum: [LOW, MEDIUM, HIGH]
+          example: "HIGH"
+        relationship:
+          type: string
+          description: Relationship type
+          enum: [DIRECT, INDIRECT]
+          example: "DIRECT"
+        jurisdiction:
+          type: string
+          description: Jurisdiction code
+          example: "US"
+
+    SubsidiaryInfo:
+      type: object
+      description: Subsidiary information with transactions
+      required:
+        - id
+        - name
+        - ownership_percentage
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "SUB123"
+        name:
+          type: string
+          description: Subsidiary name
+          example: "Acme Subsidiary Ltd"
+        ownership_percentage:
+          type: number
+          description: Ownership percentage
+          minimum: 0
+          maximum: 100
+          example: 75.5
+        transactions:
+          type: array
+          description: Recent transactions
+          items:
+            $ref: '#/components/schemas/Transaction'
+
+    AlertScenario:
+      type: object
+      description: AML alert scenario configuration
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+          description: Unique identifier
+          example: "SCN123"
+        name:
+          type: string
+          description: Scenario name
+          example: "Large Cash Deposits"
+        description:
+          type: string
+          description: Detailed description
+          example: "Detects multiple large cash deposits in short period"
+        risk_category:
+          type: string
+          description: Risk category
+          enum: [HIGH, MEDIUM, LOW]
+          example: "HIGH"
+        threshold_count:
+          type: integer
+          description: Number of thresholds
+          minimum: 0
+          example: 3
+        enabled:
+          type: boolean
+          description: Whether scenario is active
+          example: true
+
+    RelatedCustomer:
+      type: object
+      description: Customer related to a counterparty
+      required:
+        - id
+        - name
+        - relationship_type
+      properties:
+        id:
+          type: string
+          description: Customer identifier
+          example: "CUST123"
+        name:
+          type: string
+          description: Customer name
+          example: "Acme Holdings"
+        relationship_type:
+          type: string
+          description: Type of relationship
+          enum: [DIRECT, INDIRECT]
+          example: "DIRECT"
+        transaction_count:
+          type: integer
+          description: Number of transactions
+          minimum: 0
+          example: 25
+        last_transaction_date:
+          type: string
+          format: date
+          description: Date of last transaction
+          example: "2024-12-01"
+
+    ScenarioDetails:
+      type: object
+      description: Detailed scenario information
+      required:
+        - id
+        - name
+        - description
+        - parameters
+      properties:
+        id:
+          type: string
+          description: Scenario identifier
+          example: "SCN123"
+        name:
+          type: string
+          description: Scenario name
+          example: "Structured Transactions"
+        description:
+          type: string
+          description: Detailed description
+          example: "Detects potential structuring of transactions below reporting threshold"
+        parameters:
+          type: array
+          description: Scenario parameters
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - description
+            properties:
+              name:
+                type: string
+                example: "threshold_amount"
+              type:
+                type: string
+                example: "AMOUNT"
+              description:
+                type: string
+                example: "Transaction amount threshold"
+              default_value:
+                type: string
+                example: "10000"
+
+    ScenarioThreshold:
+      type: object
+      description: Scenario threshold configuration
+      required:
+        - id
+        - name
+        - value
+      properties:
+        id:
+          type: string
+          description: Threshold identifier
+          example: "THR123"
+        name:
+          type: string
+          description: Threshold name
+          example: "Daily Transaction Limit"
+        value:
+          type: number
+          description: Threshold value
+          example: 10000
+        unit:
+          type: string
+          description: Unit of measurement
+          enum: [USD, COUNT, DAYS, PERCENTAGE]
+          example: "USD"
+        description:
+          type: string
+          description: Threshold description
+          example: "Maximum daily transaction amount"
+        last_updated:
+          type: string
+          format: date
+          description: Last update date
+          example: "2024-12-01"
+
+    AlertTransactions:
+      type: object
+      description: Transactions related to an alert
+      required:
+        - alert_id
+        - alert_transactions
+      properties:
+        alert_id:
+          type: string
+          description: Alert identifier
+          example: "ALERT123"
+        alert_transactions:
+          type: array
+          description: Transactions that triggered the alert
+          items:
+            $ref: '#/components/schemas/Transaction'
+        historical_transactions:
+          type: array
+          description: Related historical transactions
+          items:
+            $ref: '#/components/schemas/Transaction'
+
+    Transaction:
+      type: object
+      description: Transaction details
+      required:
+        - id
+        - date
+        - amount
+        - type
+      properties:
+        id:
+          type: string
+          description: Transaction identifier
+          example: "TXN123"
+        date:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2024-12-01T10:00:00Z"
+        amount:
+          type: number
+          description: Transaction amount
+          minimum: 0
+          example: 50000
+        currency:
+          type: string
+          description: Currency code
+          enum: [USD, EUR, GBP]
+          example: "USD"
+        type:
+          type: string
+          description: Transaction type
+          enum: [WIRE, ACH, CHECK, CASH]
+          example: "WIRE"
+        status:
+          type: string
+          description: Transaction status
+          enum: [COMPLETED, PENDING, FAILED]
+          example: "COMPLETED"
+        counterparty:
+          type: object
+          description: Counterparty information
+          properties:
+            id:
+              type: string
+              example: "CP123"
+            name:
+              type: string
+              example: "Global Trading Ltd"
+            country:
+              type: string
+              example: "US"
+
+    OutlierAnalysis:
+      type: object
+      description: Transaction outlier analysis results
+      required:
+        - transaction_id
+        - is_outlier
+        - analysis_type
+      properties:
+        transaction_id:
+          type: string
+          description: Transaction identifier
+          example: "TXN123"
+        is_outlier:
+          type: boolean
+          description: Whether transaction is an outlier
+          example: true
+        confidence_score:
+          type: number
+          description: Confidence in outlier determination (0-1)
+          minimum: 0
+          maximum: 1
+          example: 0.95
+        analysis_type:
+          type: string
+          description: Type of analysis performed
+          enum: [customer_6month, customer_daily, same_day_transfers]
+          example: "customer_6month"
+        factors:
+          type: array
+          description: Factors contributing to outlier determination
+          items:
+            type: string
+          example:
+            - "Amount significantly higher than average"
+            - "Unusual timing of transaction"
+        statistics:
+          type: object
+          description: Statistical analysis results
+          properties:
+            mean:
+              type: number
+              description: Mean transaction amount
+              example: 50000
+            std_dev:
+              type: number
+              description: Standard deviation
+              example: 10000
+            z_score:
+              type: number
+              description: Z-score of transaction
+              example: 3.5
+
+    CustomerResponse:
+      type: object
+      description: Customer details for an alert
+      required:
+        - customer_id
+        - name
+        - risk_rating
+        - country
+        - created_at
+        - accounts
+      properties:
+        customer_id:
+          type: string
+          description: Unique identifier of the customer
+          example: "CUST_12345678"
+        name:
+          type: string
+          description: Customer name
+          example: "John Smith"
+        risk_rating:
+          type: string
+          description: Risk rating of the customer
+          enum: [LOW, MEDIUM, HIGH]
+          example: "HIGH"
+        country:
+          type: string
+          description: Country code
+          example: "US"
+        created_at:
+          type: string
+          format: date-time
+          description: Customer creation timestamp
+          example: "2024-01-06T10:00:00Z"
+        accounts:
+          type: array
+          description: List of customer accounts
+          items:
+            type: object
+            required:
+              - account_id
+              - account_type
+              - currency
+              - status
+              - opened_date
+              - closed_date
+            properties:
+              account_id:
+                type: string
+                description: Unique identifier of the account
+                example: "ACC_1_12345678"
+              account_type:
+                type: string
+                description: Type of account
+                enum: [CHECKING, SAVINGS, CREDIT_CARD]
+                example: "CHECKING"
+              currency:
+                type: string
+                description: Currency code
+                enum: [USD, EUR, GBP]
+                example: "USD"
+              status:
+                type: string
+                description: Account status
+                enum: [ACTIVE, CLOSED, PENDING]
+                example: "ACTIVE"
+              opened_date:
+                type: string
+                format: date-time
+                description: Account opening timestamp
+                example: "2023-01-06T10:00:00Z"
+              closed_date:
+                type: string
+                format: date-time
+                description: Account closing timestamp
+                example: null
+
+    AlertTransactionsResponse:
+      type: object
+      description: Detailed information about transactions related to an alert
+      required:
+        - alert_id
+        - alert_type
+        - triggering_transactions
+        - related_transactions
+        - total_transaction_count
+        - total_transaction_amount
+        - time_period
+      properties:
+        alert_id:
+          type: string
+          description: Unique identifier of the alert
+          example: "ALERT_12345678"
+        alert_type:
+          type: string
+          description: Type of the alert
+          enum: [STRUCTURED_TRANSACTIONS, LARGE_TRANSACTION, SUSPICIOUS_ACTIVITY]
+          example: "STRUCTURED_TRANSACTIONS"
+        triggering_transactions:
+          type: array
+          description: List of transactions that triggered the alert
+          items:
+            type: object
+            required:
+              - transaction_id
+              - transaction_type
+              - amount
+              - currency
+              - date
+            properties:
+              transaction_id:
+                type: string
+                description: Unique identifier of the transaction
+                example: "TXN_TRIG_1_12345678"
+              transaction_type:
+                type: string
+                description: Type of transaction
+                enum: [WIRE_TRANSFER, CASH_DEPOSIT, CHECK_DEPOSIT]
+                example: "WIRE_TRANSFER"
+              amount:
+                type: number
+                description: Transaction amount
+                minimum: 0
+                example: 50000.00
+              currency:
+                type: string
+                description: Currency code
+                enum: [USD, EUR, GBP]
+                example: "USD"
+              date:
+                type: string
+                format: date-time
+                description: Transaction timestamp
+                example: "2024-01-06T10:00:00Z"
+        related_transactions:
+          type: array
+          description: List of related transactions from the same time period
+          items:
+            type: object
+            required:
+              - transaction_id
+              - transaction_type
+              - amount
+              - currency
+              - date
+            properties:
+              transaction_id:
+                type: string
+                description: Unique identifier of the transaction
+                example: "TXN_REL_1_12345678"
+              transaction_type:
+                type: string
+                description: Type of transaction
+                enum: [WIRE_TRANSFER, CASH_DEPOSIT, CHECK_DEPOSIT]
+                example: "CASH_DEPOSIT"
+              amount:
+                type: number
+                description: Transaction amount
+                minimum: 0
+                example: 15000.00
+              currency:
+                type: string
+                description: Currency code
+                enum: [USD, EUR, GBP]
+                example: "USD"
+              date:
+                type: string
+                format: date-time
+                description: Transaction timestamp
+                example: "2024-01-05T10:00:00Z"
+        total_transaction_count:
+          type: integer
+          description: Total number of transactions (triggering + related)
+          minimum: 0
+          example: 3
+        total_transaction_amount:
+          type: number
+          format: decimal
+          description: Sum of all transaction amounts
+          example: 110000.00
+        time_period:
+          type: string
+          description: Date range covering all transactions
+          example: "2024-01-05 to 2024-01-06"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token for API authentication.
+        Token can be obtained from the authentication endpoint.
+
+security:
+  - BearerAuth: []
+
+  /customers/{customer_id}/alerts:
+    get:
+      tags:
+        - Alerts
+      summary: Get customer alerts
+      description: Get all historical alerts that resulted in a case
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of historical alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+
+  /customers/{customer_id}/relationships:
+    get:
+      tags:
+        - Customers
+      summary: Get customer relationships
+      description: Identify all relationships attached to a customer
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of customer relationships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Relationship'
+
+  /customers/{customer_id}/counterparties:
+    get:
+      tags:
+        - Customers
+      summary: Get customer counterparties
+      description: Get all counterparties customer has interacted with
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: months
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 6
+      responses:
+        '200':
+          description: List of counterparties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Counterparty'
+
+  /customers/{customer_id}/touchpoints:
+    get:
+      tags:
+        - Customers
+      summary: Get customer touchpoints
+      description: Get all bank touchpoints for a customer
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: months
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 6
+      responses:
+        '200':
+          description: List of touchpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Touchpoint'
+
+  /customers/{customer_id}/business-locations:
+    get:
+      tags:
+        - Customers
+      summary: Get customer business locations
+      description: Get all places where customer conducts business
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of business locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BusinessLocation'
+
+  /countries/{country_code}/risk-assessment:
+    get:
+      tags:
+        - Risk Assessment
+      summary: Get country risk assessment
+      description: Check if a country is rated high risk
+      parameters:
+        - name: country_code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Country risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountryRisk'
+
+  /customers/{customer_id}/pep-counterparties:
+    get:
+      tags:
+        - Customers
+      summary: Get PEP counterparties
+      description: Get politically exposed counterparties
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of PEP counterparties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PEPCounterparty'
+
+  /customers/{customer_id}/subsidiaries:
+    get:
+      tags:
+        - Customers
+      summary: Get customer subsidiaries
+      description: Get all subsidiaries and their transactions
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of subsidiaries and transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubsidiaryInfo'
+
+  /customers/{customer_id}/alert-scenarios:
+    get:
+      tags:
+        - Alerts
+      summary: Get customer alert scenarios
+      description: Get all scenarios used to generate alerts
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of alert scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertScenario'
+
+  /counterparties/{counterparty_id}/related-customers:
+    get:
+      tags:
+        - Customers
+      summary: Get customers related to counterparty
+      description: Get all bank customers who interacted with the counterparty
+      parameters:
+        - name: counterparty_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of related customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RelatedCustomer'
+
+  /scenarios/{scenario_id}:
+    get:
+      tags:
+        - Scenarios
+      summary: Get scenario details
+      description: Get detailed description and parameters for a scenario
+      parameters:
+        - name: scenario_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Scenario details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScenarioDetails'
+
+  /scenarios/{scenario_id}/thresholds:
+    get:
+      tags:
+        - Scenarios
+      summary: Get scenario thresholds
+      description: Get all thresholds for an AML scenario
+      parameters:
+        - name: scenario_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Scenario thresholds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScenarioThreshold'
+
+  /alerts/{alert_id}/transactions:
+    get:
+      tags:
+        - Alerts
+      summary: Get alert-related transactions
+      description: Get transactions involved in alert and historical transactions
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alert-related transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertTransactions'
