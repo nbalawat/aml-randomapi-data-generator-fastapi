@@ -612,3 +612,102 @@ def generate_counterparties_risk_assessment(
     
     counterparties = [generate_counterparty() for _ in range(num_counterparties)]
     return counterparties
+
+def generate_transaction_metrics(customer_id: str, months: int = 6) -> dict:
+    """Generate comprehensive transaction metrics."""
+    return {
+        "total_debits": 150,
+        "total_credits": 75,
+        "debit_metrics": {
+            "average": 5000.00,
+            "std_dev": 1200.00,
+            "velocity_per_day": 0.82
+        },
+        "credit_metrics": {
+            "average": 4800.00,
+            "std_dev": 950.00,
+            "velocity_per_day": 0.41
+        },
+        "growth_rate": {
+            "month_over_month": 0.15,
+            "transaction_volume": 0.08
+        }
+    }
+
+def generate_high_risk_metrics(customer_id: str, months: int = 6) -> dict:
+    """Generate metrics for high-risk transactions."""
+    return {
+        "high_risk_geography_transactions": {
+            "count": 45,
+            "total_value": 250000.00,
+            "average": 5555.56,
+            "std_dev": 1200.00
+        },
+        "high_risk_institution_transfers": {
+            "count": 30,
+            "total_value": 180000.00,
+            "average": 6000.00,
+            "std_dev": 1500.00
+        }
+    }
+
+def generate_transaction_patterns(customer_id: str, months: int = 6) -> dict:
+    """Generate analysis of transaction patterns."""
+    return {
+        "top_channels": [
+            {"channel": "WIRE", "count": 45, "total_value": 225000.00},
+            {"channel": "ACH", "count": 30, "total_value": 150000.00}
+        ],
+        "status_distribution": {
+            "COMPLETED": 85,
+            "PENDING": 10,
+            "FAILED": 5
+        },
+        "peak_activity": {
+            "day_of_week": "WEDNESDAY",
+            "hour_of_day": 14
+        },
+        "recurring_patterns": {
+            "weekly_transfers": 3,
+            "monthly_payments": 2
+        },
+        "avg_time_between_transactions": "3.5 days"
+    }
+
+def generate_transaction_analysis(customer_id: str, months: int = 6) -> dict:
+    """Generate detailed transaction analysis."""
+    return {
+        "geographic_distribution": {
+            "domestic": {
+                "count": 120,
+                "total_value": 600000.00
+            },
+            "international": {
+                "count": 30,
+                "total_value": 150000.00
+            }
+        },
+        "fees": {
+            "total": 2500.00,
+            "average": 16.67,
+            "by_type": {
+                "WIRE": 1800.00,
+                "ACH": 700.00
+            }
+        },
+        "failed_transactions": {
+            "count": 5,
+            "total_value": 25000.00,
+            "reasons": {
+                "INSUFFICIENT_FUNDS": 3,
+                "INVALID_ACCOUNT": 2
+            }
+        },
+        "highest_transactions": [
+            {
+                "id": "TXN_123",
+                "amount": 50000.00,
+                "date": "2024-01-01T10:00:00Z"
+            }
+        ]
+    }

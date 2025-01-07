@@ -645,6 +645,198 @@
           }
         }
       }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/transaction-metrics",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to analyze (default: 6)",
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Provides comprehensive transaction metrics for a customer over specified period.",
+        "Includes total debits/credits, averages, standard deviations, velocity, and growth rates."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/transaction-metrics?months=6",
+        "response": {
+          "total_debits": 150,
+          "total_credits": 75,
+          "debit_metrics": {
+            "average": 5000.00,
+            "std_dev": 1200.00,
+            "velocity_per_day": 0.82
+          },
+          "credit_metrics": {
+            "average": 4800.00,
+            "std_dev": 950.00,
+            "velocity_per_day": 0.41
+          },
+          "growth_rate": {
+            "month_over_month": 0.15,
+            "transaction_volume": 0.08
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/high-risk-metrics",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to analyze (3 or 6)",
+            "enum": [3, 6],
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Analyzes high-risk transaction patterns including geographic risk and institutional risk.",
+        "Provides metrics for transactions with high-risk counterparties and jurisdictions."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/high-risk-metrics?months=6",
+        "response": {
+          "high_risk_geography_transactions": {
+            "count": 45,
+            "total_value": 250000.00,
+            "average": 5555.56,
+            "std_dev": 1200.00
+          },
+          "high_risk_institution_transfers": {
+            "count": 30,
+            "total_value": 180000.00,
+            "average": 6000.00,
+            "std_dev": 1500.00
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/transaction-patterns",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to analyze",
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Analyzes transaction patterns including channels, timing, and recurring behaviors.",
+        "Helps identify normal customer behavior patterns and potential anomalies."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/transaction-patterns?months=6",
+        "response": {
+          "top_channels": [
+            {"channel": "WIRE", "count": 45, "total_value": 225000.00},
+            {"channel": "ACH", "count": 30, "total_value": 150000.00}
+          ],
+          "status_distribution": {
+            "COMPLETED": 85,
+            "PENDING": 10,
+            "FAILED": 5
+          },
+          "peak_activity": {
+            "day_of_week": "WEDNESDAY",
+            "hour_of_day": 14
+          },
+          "recurring_patterns": {
+            "weekly_transfers": 3,
+            "monthly_payments": 2
+          },
+          "avg_time_between_transactions": "3.5 days"
+        }
+      }
+    },
+    {
+      "endpoint": "/customers/{customer_id}/transaction-analysis",
+      "method": "GET",
+      "parameters": {
+        "path": {
+          "customer_id": {
+            "type": "string",
+            "description": "Unique identifier of the customer"
+          }
+        },
+        "query": {
+          "months": {
+            "type": "integer",
+            "description": "Number of months to analyze",
+            "default": 6
+          }
+        }
+      },
+      "description": [
+        "Provides detailed analysis of transaction characteristics including geographic distribution,",
+        "fees, failed transactions, and notable high-value transactions."
+      ],
+      "example": {
+        "request": "GET /api/v1/customers/CUST_12345/transaction-analysis?months=6",
+        "response": {
+          "geographic_distribution": {
+            "domestic": {
+              "count": 120,
+              "total_value": 600000.00
+            },
+            "international": {
+              "count": 30,
+              "total_value": 150000.00
+            }
+          },
+          "fees": {
+            "total": 2500.00,
+            "average": 16.67,
+            "by_type": {
+              "WIRE": 1800.00,
+              "ACH": 700.00
+            }
+          },
+          "failed_transactions": {
+            "count": 5,
+            "total_value": 25000.00,
+            "reasons": {
+              "INSUFFICIENT_FUNDS": 3,
+              "INVALID_ACCOUNT": 2
+            }
+          },
+          "highest_transactions": [
+            {
+              "id": "TXN_123",
+              "amount": 50000.00,
+              "date": "2024-01-01T10:00:00Z"
+            }
+          ]
+        }
+      }
     }
   ]
 }

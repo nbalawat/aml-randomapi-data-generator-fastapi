@@ -29,9 +29,9 @@ class AlertTransactionsResponse(BaseModel):
     total_transaction_amount: Decimal
     time_period: str
 
-router = APIRouter(prefix="/api/v1")
+router = APIRouter()
 
-@router.get("/customers/{customer_id}/documents")
+@router.get("/api/v1/customers/{customer_id}/documents")
 async def get_customer_documents(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -40,7 +40,7 @@ async def get_customer_documents(
     """
     return data.generate_documents(customer_id)
 
-@router.get("/customers/{customer_id}/documents/summary")
+@router.get("/api/v1/customers/{customer_id}/documents/summary")
 async def get_document_summary(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -49,7 +49,7 @@ async def get_document_summary(
     """
     return data.generate_document_summary(customer_id)
 
-@router.get("/customers/{customer_id}/transactions")
+@router.get("/api/v1/customers/{customer_id}/transactions")
 async def get_transaction_summary(
     customer_id: str = Path(..., description="The unique identifier of the customer"),
     start_date: datetime = Query(..., description="Start date for the transaction period"),
@@ -60,7 +60,7 @@ async def get_transaction_summary(
     """
     return data.generate_transaction_summary(customer_id, start_date, end_date)
 
-@router.get("/customers/{customer_id}/alerts")
+@router.get("/api/v1/customers/{customer_id}/alerts")
 async def get_customer_alerts(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -69,7 +69,7 @@ async def get_customer_alerts(
     """
     return data.generate_alerts(customer_id)
 
-@router.get("/customers/{customer_id}/relationships")
+@router.get("/api/v1/customers/{customer_id}/relationships")
 async def get_customer_relationships(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -78,7 +78,7 @@ async def get_customer_relationships(
     """
     return data.generate_relationships(customer_id)
 
-@router.get("/customers/{customer_id}/counterparties")
+@router.get("/api/v1/customers/{customer_id}/counterparties")
 async def get_customer_counterparties(
     customer_id: str = Path(..., description="The unique identifier of the customer"),
     months: int = Query(6, description="Number of months to look back")
@@ -88,7 +88,7 @@ async def get_customer_counterparties(
     """
     return data.generate_counterparties(customer_id, months)
 
-@router.get("/customers/{customer_id}/touchpoints")
+@router.get("/api/v1/customers/{customer_id}/touchpoints")
 async def get_customer_touchpoints(
     customer_id: str = Path(..., description="The unique identifier of the customer"),
     months: int = Query(6, description="Number of months to look back")
@@ -98,7 +98,7 @@ async def get_customer_touchpoints(
     """
     return data.generate_touchpoints(customer_id, months)
 
-@router.get("/customers/{customer_id}/business-locations")
+@router.get("/api/v1/customers/{customer_id}/business-locations")
 async def get_business_locations(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -107,7 +107,7 @@ async def get_business_locations(
     """
     return data.generate_business_locations(customer_id)
 
-@router.get("/countries/{country_code}/risk-assessment")
+@router.get("/api/v1/countries/{country_code}/risk-assessment")
 async def get_country_risk(
     country_code: str = Path(..., description="The country code to assess")
 ):
@@ -116,7 +116,7 @@ async def get_country_risk(
     """
     return data.generate_country_risk(country_code)
 
-@router.get("/customers/{customer_id}/pep-counterparties")
+@router.get("/api/v1/customers/{customer_id}/pep-counterparties")
 async def get_pep_counterparties(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -125,7 +125,7 @@ async def get_pep_counterparties(
     """
     return data.generate_pep_counterparties(customer_id)
 
-@router.get("/customers/{customer_id}/subsidiaries")
+@router.get("/api/v1/customers/{customer_id}/subsidiaries")
 async def get_customer_subsidiaries(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -134,7 +134,7 @@ async def get_customer_subsidiaries(
     """
     return data.generate_subsidiary_info(customer_id)
 
-@router.get("/customers/{customer_id}/alert-scenarios")
+@router.get("/api/v1/customers/{customer_id}/alert-scenarios")
 async def get_customer_alert_scenarios(
     customer_id: str = Path(..., description="The unique identifier of the customer")
 ):
@@ -143,7 +143,7 @@ async def get_customer_alert_scenarios(
     """
     return data.generate_alert_scenarios(customer_id)
 
-@router.get("/counterparties/{counterparty_id}/related-customers")
+@router.get("/api/v1/counterparties/{counterparty_id}/related-customers")
 async def get_related_customers(
     counterparty_id: str = Path(..., description="The unique identifier of the counterparty")
 ):
@@ -152,7 +152,7 @@ async def get_related_customers(
     """
     return data.generate_related_customers(counterparty_id)
 
-@router.get("/scenarios/{scenario_id}")
+@router.get("/api/v1/scenarios/{scenario_id}")
 async def get_scenario_details(
     scenario_id: str = Path(..., description="The unique identifier of the scenario")
 ):
@@ -161,7 +161,7 @@ async def get_scenario_details(
     """
     return data.generate_scenario_details(scenario_id)
 
-@router.get("/scenarios/{scenario_id}/thresholds")
+@router.get("/api/v1/scenarios/{scenario_id}/thresholds")
 async def get_scenario_thresholds(
     scenario_id: str = Path(..., description="The unique identifier of the scenario")
 ):
@@ -170,7 +170,7 @@ async def get_scenario_thresholds(
     """
     return data.generate_scenario_thresholds(scenario_id)
 
-@router.get("/alerts/{alert_id}/transactions", response_model=AlertTransactionsResponse)
+@router.get("/api/v1/alerts/{alert_id}/transactions", response_model=AlertTransactionsResponse)
 async def get_alert_transactions_detail(
     alert_id: str = Path(..., description="The unique identifier of the alert"),
     include_related: bool = Query(True, description="Include related transactions in the response")
@@ -189,7 +189,7 @@ async def get_alert_transactions_detail(
     """
     return data.generate_alert_transactions_detail(alert_id, include_related)
 
-@router.get("/alerts/{alert_id}/customer", response_model=CustomerResponse)
+@router.get("/api/v1/alerts/{alert_id}/customer", response_model=CustomerResponse)
 async def get_alert_customer_details(
     alert_id: str = Path(..., description="The unique identifier of the alert")
 ):
@@ -203,7 +203,7 @@ async def get_alert_customer_details(
     """
     return data.generate_alert_customer_details(alert_id)
 
-@router.get("/transactions/{transaction_id}/outlier-analysis")
+@router.get("/api/v1/transactions/{transaction_id}/outlier-analysis")
 async def get_transaction_outlier_analysis(
     transaction_id: str = Path(..., description="The unique identifier of the transaction"),
     analysis_type: str = Query(
@@ -217,7 +217,7 @@ async def get_transaction_outlier_analysis(
     """
     return data.generate_outlier_analysis(transaction_id, analysis_type)
 
-@router.get("/counterparties/risk-assessment")
+@router.get("/api/v1/counterparties/risk-assessment")
 async def get_counterparties_risk_assessment(
     customer_id: str = Query(None, description="Filter counterparties for a specific customer"),
     risk_level: str = Query(None, description="Filter by risk level (HIGH, MEDIUM, LOW)"),
@@ -238,3 +238,43 @@ async def get_counterparties_risk_assessment(
     - is_pep: Optional filter for politically exposed persons
     """
     return data.generate_counterparties_risk_assessment(customer_id, risk_level, is_pep)
+
+@router.get("/api/v1/customers/{customer_id}/transaction-metrics")
+async def get_transaction_metrics(
+    customer_id: str = Path(..., description="The unique identifier of the customer"),
+    months: int = Query(6, description="Number of months to analyze")
+):
+    """
+    Get comprehensive transaction metrics for a customer.
+    """
+    return data.generate_transaction_metrics(customer_id, months)
+
+@router.get("/api/v1/customers/{customer_id}/high-risk-metrics")
+async def get_high_risk_metrics(
+    customer_id: str = Path(..., description="The unique identifier of the customer"),
+    months: int = Query(6, description="Number of months to analyze", ge=3, le=6)
+):
+    """
+    Get metrics related to high-risk transactions.
+    """
+    return data.generate_high_risk_metrics(customer_id, months)
+
+@router.get("/api/v1/customers/{customer_id}/transaction-patterns")
+async def get_transaction_patterns(
+    customer_id: str = Path(..., description="The unique identifier of the customer"),
+    months: int = Query(6, description="Number of months to analyze")
+):
+    """
+    Get analysis of transaction patterns and behaviors.
+    """
+    return data.generate_transaction_patterns(customer_id, months)
+
+@router.get("/api/v1/customers/{customer_id}/transaction-analysis")
+async def get_transaction_analysis(
+    customer_id: str = Path(..., description="The unique identifier of the customer"),
+    months: int = Query(6, description="Number of months to analyze")
+):
+    """
+    Get detailed analysis of transaction characteristics.
+    """
+    return data.generate_transaction_analysis(customer_id, months)

@@ -30,7 +30,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(aml_router, prefix="/api/v1")
+app.include_router(aml_router)
 
 @app.get("/")
 async def root():
