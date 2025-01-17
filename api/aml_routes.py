@@ -29,6 +29,39 @@ class AlertTransactionsResponse(BaseModel):
     total_transaction_amount: Decimal
     time_period: str
 
+class CustomerDocument(BaseModel):
+    id: str
+    type: str
+    date_created: datetime
+    content: str
+
+class JurisdictionDetail(BaseModel):
+    country_code: str
+    country_name: str
+    risk_level: str
+    risk_factors: List[str]
+
+class TransactionDetail(BaseModel):
+    customer_id: str
+    transaction_id: str
+    transaction_amount: Decimal
+    source_of_funds_jurisdiction: JurisdictionDetail
+    date: Optional[datetime] = None
+
+class ScenarioDetail(BaseModel):
+    """Details about an AML scenario."""
+    id: str
+    name: str
+    description: str
+    threshold: float
+    time_window_days: int
+
+class AlertTransactionsResponse(BaseModel):
+    """Response model for alert-triggering transactions."""
+    scenario: ScenarioDetail
+    alert_id: str
+    transactions: List[TransactionDetail]
+
 router = APIRouter()
 
 @router.get("/api/v1/customers/{customer_id}/documents")
@@ -50,15 +83,85 @@ async def get_document_summary(
     return data.generate_document_summary(customer_id)
 
 @router.get("/api/v1/customers/{customer_id}/transactions")
-async def get_transaction_summary(
+async def get_customer_transactions(
     customer_id: str = Path(..., description="The unique identifier of the customer"),
-    start_date: datetime = Query(..., description="Start date for the transaction period"),
-    end_date: datetime = Query(..., description="End date for the transaction period")
-):
+    start_date: Optional[datetime] = Query(None, description="Start date for the transaction period"),
+    end_date: Optional[datetime] = Query(None, description="End date for the transaction period"),
+    months: Optional[int] = Query(None, description="Number of months of history to return (max 36)")
+) -> List[TransactionDetail]:
     """
-    Get customer transactions summarized by type over a specified period.
+    Get transaction details for a specific customer.
+    
+    Parameters:
+    - start_date/end_date: Optional date range filter
+    - months: Optional number of months of history to return (max 36)
+    
+    Returns a list of transactions with the following characteristics:
+    - 3-5 transactions per month
+    - Mix of jurisdictions (70% low risk, 20% medium risk, 10% high risk)
+    - Outlier transactions in random months (large amounts from high-risk jurisdictions)
     """
-    return data.generate_transaction_summary(customer_id, start_date, end_date)
+    # Generate historical transactions
+    transactions = data.generate_historical_transactions(customer_id, min(months or 36, 36))
+    
+    # Filter by date range if provided
+    if start_date and end_date:
+        transactions = [
+            t for t in transactions 
+            if start_date <= datetime.fromisoformat(t["date"]) <= end_date
+        ]
+    
+    # Convert to TransactionDetail objects
+    return [
+        TransactionDetail(
+            customer_id=t["customer_id"],
+            transaction_id=t["transaction_id"],
+            transaction_amount=Decimal(t["transaction_amount"]),
+            source_of_funds_jurisdiction=t["source_of_funds_jurisdiction"],
+            date=datetime.fromisoformat(t["date"])
+        )
+        for t in transactions
+    ]
+
+@router.get("/api/v1/customers/{customer_id}/incorporation-documents")
+async def get_customer_incorporation_documents(
+    customer_id: str = Path(..., description="The unique identifier of the customer")
+) -> List[CustomerDocument]:
+    """
+    Get incorporation documents for a specific customer.
+    """
+    # Mock data based on screenshot example
+    if customer_id == "1234":
+        return [
+            CustomerDocument(
+                id="89fb5e08-843b-4877-8244-326ae678067f",
+                type="ARTICLES_OF_INCORPORATION",
+                date_created=datetime.fromisoformat("2024-07-25T17:08:06.018284"),
+                content="The name of the corporation is Advancement in Education (AIE). The corporation is organized for promoting access to education and improving outcomes, and obtains its funding through monthly donations. It qualifies as tax exempt under section 501(c)(3) of the IRC. Each January AIE holds a fundraising event which provides the majority of the corporation's yearly funding."
+            ),
+            CustomerDocument(
+                id="89fb5e08-843b-4877-8244-326ae678067f",
+                type="BYLAWS",
+                date_created=datetime.fromisoformat("2024-07-25T17:08:06.018284"),
+                content="Advancement in Education (AIE) operates in the United States of America. AIE supports school programs for children in need."
+            )
+        ]
+    elif customer_id == "1235":
+        return [
+            CustomerDocument(
+                id="89fb5e08-843b-4877-8244-326ae678067f",
+                type="ARTICLES_OF_INCORPORATION",
+                date_created=datetime.fromisoformat("2024-07-25T17:08:06.018284"),
+                content="The name of the corporation is Better Energy Advocates (BEA). The corporation is organized for energy policy development and educational purposes, along with non-substantial lobbying activity and obtains its funding through monthly donations. It qualifies as tax exempt under section 501(c)(3) of the IRC."
+            ),
+            CustomerDocument(
+                id="89fb5e08-843b-4877-8244-326ae678067f",
+                type="BYLAWS",
+                date_created=datetime.fromisoformat("2024-07-25T17:08:06.018284"),
+                content="Better Energy Advocates (BEA) operates in the United States of America. BEA Advocates supports development, education, and limited influencing of legislation at the federal level."
+            )
+        ]
+    return []
 
 @router.get("/api/v1/customers/{customer_id}/alerts")
 async def get_customer_alerts(
@@ -278,3 +381,45 @@ async def get_transaction_analysis(
     Get detailed analysis of transaction characteristics.
     """
     return data.generate_transaction_analysis(customer_id, months)
+
+@router.get("/api/v1/customers/{customer_id}/alert-transactions")
+async def get_alert_triggering_transactions(
+    customer_id: str = Path(..., description="The unique identifier of the customer"),
+    scenario_type: Optional[str] = Query(
+        None,
+        description="Specific scenario type to generate (STRUCTURING, RAPID_MOVEMENT, HIGH_RISK_FLOW, UNUSUAL_PATTERN, ROUND_NUMBERS)"
+    )
+) -> AlertTransactionsResponse:
+    """
+    Get transactions that would trigger an AML alert for a specific customer.
+    
+    Parameters:
+    - customer_id: Customer identifier
+    - scenario_type: Optional specific scenario to generate (if not provided, a random scenario is chosen)
+    
+    Returns transactions that would trigger an AML alert based on various scenarios:
+    - STRUCTURING: Multiple transactions just below reporting threshold
+    - RAPID_MOVEMENT: Large amounts moved quickly through accounts
+    - HIGH_RISK_FLOW: Large transfers involving high-risk jurisdictions
+    - UNUSUAL_PATTERN: Sudden change in transaction behavior
+    - ROUND_NUMBERS: Multiple large round-number transactions
+    """
+    result = data.generate_alert_triggering_transactions(customer_id, scenario_type)
+    
+    # Convert transactions to TransactionDetail objects
+    transactions = [
+        TransactionDetail(
+            customer_id=t["customer_id"],
+            transaction_id=t["transaction_id"],
+            transaction_amount=Decimal(t["transaction_amount"]),
+            source_of_funds_jurisdiction=t["source_of_funds_jurisdiction"],
+            date=datetime.fromisoformat(t["date"])
+        )
+        for t in result["transactions"]
+    ]
+    
+    return AlertTransactionsResponse(
+        scenario=ScenarioDetail(**result["scenario"]),
+        alert_id=result["alert_id"],
+        transactions=transactions
+    )

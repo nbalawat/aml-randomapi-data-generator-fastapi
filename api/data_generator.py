@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
-import uuid
+from uuid import uuid4
 import statistics
 
 # Business names and industries
@@ -41,6 +41,70 @@ COUNTRIES = {
     'RU': 'HIGH',
     'IR': 'HIGH',
     'KP': 'HIGH'
+}
+
+# Define jurisdiction data
+JURISDICTIONS = {
+    "LOW_RISK": [
+        {
+            "country_code": "US",
+            "country_name": "United States of America",
+            "risk_level": "LOW",
+            "risk_factors": []
+        },
+        {
+            "country_code": "CA",
+            "country_name": "Canada",
+            "risk_level": "LOW",
+            "risk_factors": []
+        },
+        {
+            "country_code": "GB",
+            "country_name": "United Kingdom",
+            "risk_level": "LOW",
+            "risk_factors": []
+        }
+    ],
+    "MEDIUM_RISK": [
+        {
+            "country_code": "CH",
+            "country_name": "Switzerland",
+            "risk_level": "MEDIUM_LOW",
+            "risk_factors": ["Banking Secrecy Laws", "High-Value Transaction Hub"]
+        },
+        {
+            "country_code": "CY",
+            "country_name": "Cyprus",
+            "risk_level": "MEDIUM",
+            "risk_factors": ["History of Shell Companies", "Offshore Financial Center"]
+        },
+        {
+            "country_code": "MT",
+            "country_name": "Malta",
+            "risk_level": "MEDIUM",
+            "risk_factors": ["Offshore Financial Center", "Citizenship by Investment Program"]
+        }
+    ],
+    "HIGH_RISK": [
+        {
+            "country_code": "IR",
+            "country_name": "Iran",
+            "risk_level": "HIGH",
+            "risk_factors": ["OFAC Sanctioned Country", "High Money Laundering Risk", "Limited Banking Transparency"]
+        },
+        {
+            "country_code": "KP",
+            "country_name": "North Korea",
+            "risk_level": "VERY_HIGH",
+            "risk_factors": ["OFAC Sanctioned Country", "No Banking Transparency", "High Risk of Money Laundering", "Limited International Oversight"]
+        },
+        {
+            "country_code": "VE",
+            "country_name": "Venezuela",
+            "risk_level": "HIGH",
+            "risk_factors": ["Political Instability", "Economic Sanctions", "High Corruption Risk"]
+        }
+    ]
 }
 
 def generate_business_name() -> str:
@@ -253,12 +317,12 @@ def generate_alert(customer_id: str) -> Dict[str, Any]:
     statuses = ["OPEN", "CLOSED", "UNDER_REVIEW"]
     
     return {
-        "id": str(uuid.uuid4()),
+        "id": str(uuid4()),
         "date_created": (datetime.now() - timedelta(days=random.randint(1, 180))).isoformat(),
         "type": random.choice(alert_types),
         "status": random.choice(statuses),
         "risk_score": round(random.uniform(0, 100), 2),
-        "case_id": str(uuid.uuid4()) if random.random() > 0.3 else None
+        "case_id": str(uuid4()) if random.random() > 0.3 else None
     }
 
 def generate_alerts(customer_id: str, count: int = 3) -> List[Dict[str, Any]]:
@@ -269,7 +333,7 @@ def generate_document(customer_id: str) -> Dict[str, Any]:
     """Generate a single document."""
     doc_types = ["ID_VERIFICATION", "PROOF_OF_ADDRESS", "BANK_STATEMENT", "TAX_RETURN"]
     return {
-        "id": str(uuid.uuid4()),
+        "id": str(uuid4()),
         "type": random.choice(doc_types),
         "date_created": (datetime.now() - timedelta(days=random.randint(1, 365))).isoformat(),
         "content": f"Sample document content for customer {customer_id}"
@@ -287,14 +351,14 @@ def generate_transaction(customer_id: str, date: Optional[datetime] = None) -> D
     amount = round(Decimal(random.uniform(1000, 1000000)), 2)
     
     return {
-        "id": str(uuid.uuid4()),
+        "id": str(uuid4()),
         "date": date.isoformat(),
         "amount": amount,
         "currency": random.choice(["USD", "EUR", "GBP"]),
         "type": random.choice(TRANSACTION_TYPES),
         "status": random.choice(["COMPLETED", "PENDING", "FAILED"]),
         "counterparty": {
-            "id": str(uuid.uuid4()),
+            "id": str(uuid4()),
             "name": generate_business_name(),
             "country": random.choice(list(COUNTRIES.keys()))
         }
@@ -397,7 +461,7 @@ def generate_scenario_details(scenario_id: str) -> Dict[str, Any]:
     parameters = []
     for _ in range(random.randint(2, 5)):
         parameters.append({
-            "name": f"Parameter_{uuid.uuid4().hex[:8]}",
+            "name": f"Parameter_{uuid4().hex[:8]}",
             "type": random.choice(parameter_types),
             "description": "Parameter description",
             "default_value": str(random.randint(1, 1000))
@@ -710,4 +774,224 @@ def generate_transaction_analysis(customer_id: str, months: int = 6) -> dict:
                 "date": "2024-01-01T10:00:00Z"
             }
         ]
+    }
+
+def generate_historical_transactions(customer_id: str, months: int = 36) -> List[Dict]:
+    """
+    Generate historical transactions for a customer.
+    
+    Args:
+        customer_id: Customer identifier
+        months: Number of months to generate data for (default 36)
+    
+    Returns:
+        List of transaction dictionaries
+    """
+    transactions = []
+    current_date = datetime.now()
+    
+    # Outlier months - create 4-5 months with unusual activity
+    outlier_months = random.sample(range(months), 4)
+    
+    for month in range(months):
+        # Determine number of transactions for this month (3-5)
+        num_transactions = random.randint(3, 5)
+        
+        # If this is an outlier month, add 1-2 large transactions
+        is_outlier_month = month in outlier_months
+        
+        for _ in range(num_transactions):
+            # Generate transaction date for this month
+            days_ago = month * 30 + random.randint(1, 28)  # Spread transactions throughout the month
+            transaction_date = current_date - timedelta(days=days_ago)
+            
+            # Determine transaction characteristics
+            if is_outlier_month and random.random() < 0.3:  # 30% chance of outlier in outlier months
+                amount = generate_outlier_amount()
+                jurisdiction = get_random_jurisdiction("HIGH_RISK")  # High-risk jurisdiction for outliers
+            else:
+                amount = generate_transaction_amount()
+                # Mix of jurisdictions for normal transactions
+                risk_level = random.choices(
+                    ["LOW_RISK", "MEDIUM_RISK", "HIGH_RISK"],
+                    weights=[0.7, 0.2, 0.1]  # 70% low risk, 20% medium risk, 10% high risk
+                )[0]
+                jurisdiction = get_random_jurisdiction(risk_level)
+            
+            transaction = {
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": amount,
+                "source_of_funds_jurisdiction": jurisdiction,
+                "date": transaction_date.isoformat()
+            }
+            transactions.append(transaction)
+    
+    # Sort transactions by date
+    transactions.sort(key=lambda x: x["date"], reverse=True)
+    return transactions
+
+def generate_transaction_amount() -> str:
+    """Generate a realistic transaction amount."""
+    # Normal transactions: $1,000 to $50,000
+    return str(random.randint(1000, 50000))
+
+def generate_outlier_amount() -> str:
+    """Generate an outlier transaction amount."""
+    # Outlier transactions: $500,000 to $2,000,000
+    return str(random.randint(500000, 2000000))
+
+def get_random_jurisdiction(risk_level: str) -> Dict:
+    """Get a random jurisdiction based on risk level."""
+    jurisdictions = JURISDICTIONS
+    return random.choice(jurisdictions[risk_level])
+
+# Define AML scenarios
+AML_SCENARIOS = {
+    "STRUCTURING": {
+        "name": "Transaction Structuring",
+        "description": "Multiple transactions just below reporting threshold",
+        "threshold": 9000,  # Just below 10K reporting requirement
+        "time_window_days": 7,
+        "min_transactions": 3
+    },
+    "RAPID_MOVEMENT": {
+        "name": "Rapid Movement of Funds",
+        "description": "Large amounts moved quickly through accounts",
+        "threshold": 50000,
+        "time_window_days": 2,
+        "min_transactions": 2
+    },
+    "HIGH_RISK_FLOW": {
+        "name": "High Risk Jurisdiction Flow",
+        "description": "Large transfers involving high-risk jurisdictions",
+        "threshold": 100000,
+        "time_window_days": 30,
+        "min_transactions": 1
+    },
+    "UNUSUAL_PATTERN": {
+        "name": "Unusual Transaction Pattern",
+        "description": "Sudden change in transaction behavior",
+        "threshold": 25000,
+        "time_window_days": 14,
+        "min_transactions": 4
+    },
+    "ROUND_NUMBERS": {
+        "name": "Round Number Transactions",
+        "description": "Multiple large round-number transactions",
+        "threshold": 50000,
+        "time_window_days": 10,
+        "min_transactions": 2
+    }
+}
+
+def generate_alert_triggering_transactions(
+    customer_id: str,
+    scenario_type: Optional[str] = None
+) -> Dict:
+    """
+    Generate transactions that would trigger an AML alert.
+    
+    Args:
+        customer_id: Customer identifier
+        scenario_type: Optional specific scenario to generate (if None, one is randomly chosen)
+    
+    Returns:
+        Dictionary containing scenario details and triggering transactions
+    """
+    # Select scenario
+    if scenario_type and scenario_type in AML_SCENARIOS:
+        scenario = AML_SCENARIOS[scenario_type]
+        scenario_id = scenario_type
+    else:
+        scenario_id = random.choice(list(AML_SCENARIOS.keys()))
+        scenario = AML_SCENARIOS[scenario_id]
+    
+    current_date = datetime.now()
+    transactions = []
+    
+    if scenario_id == "STRUCTURING":
+        # Generate multiple transactions just below reporting threshold
+        num_transactions = random.randint(3, 5)
+        for i in range(num_transactions):
+            amount = random.uniform(8500, 9900)  # Just below 10K
+            date_offset = random.randint(0, scenario["time_window_days"])
+            transactions.append({
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": round(amount, 2),
+                "source_of_funds_jurisdiction": get_random_jurisdiction("LOW_RISK"),  # Usually domestic
+                "date": (current_date - timedelta(days=date_offset)).isoformat()
+            })
+    
+    elif scenario_id == "RAPID_MOVEMENT":
+        # Generate rapid large transfers
+        num_transactions = random.randint(2, 3)
+        for i in range(num_transactions):
+            amount = random.uniform(50000, 150000)
+            hours_offset = random.randint(1, 48)  # Within 48 hours
+            transactions.append({
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": round(amount, 2),
+                "source_of_funds_jurisdiction": get_random_jurisdiction("MEDIUM_RISK"),
+                "date": (current_date - timedelta(hours=hours_offset)).isoformat()
+            })
+    
+    elif scenario_id == "HIGH_RISK_FLOW":
+        # Generate high-risk jurisdiction transfers
+        num_transactions = random.randint(1, 2)
+        for i in range(num_transactions):
+            amount = random.uniform(100000, 500000)
+            days_offset = random.randint(0, scenario["time_window_days"])
+            transactions.append({
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": round(amount, 2),
+                "source_of_funds_jurisdiction": get_random_jurisdiction("HIGH_RISK"),
+                "date": (current_date - timedelta(days=days_offset)).isoformat()
+            })
+    
+    elif scenario_id == "UNUSUAL_PATTERN":
+        # Generate sudden spike in transaction activity
+        num_transactions = random.randint(4, 6)
+        for i in range(num_transactions):
+            amount = random.uniform(25000, 75000)
+            days_offset = random.randint(0, scenario["time_window_days"])
+            transactions.append({
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": round(amount, 2),
+                "source_of_funds_jurisdiction": get_random_jurisdiction("MEDIUM_RISK"),
+                "date": (current_date - timedelta(days=days_offset)).isoformat()
+            })
+    
+    elif scenario_id == "ROUND_NUMBERS":
+        # Generate round number transactions
+        num_transactions = random.randint(2, 3)
+        round_amounts = [50000, 100000, 150000, 200000]
+        for i in range(num_transactions):
+            amount = random.choice(round_amounts)
+            days_offset = random.randint(0, scenario["time_window_days"])
+            transactions.append({
+                "customer_id": customer_id,
+                "transaction_id": str(uuid4()),
+                "transaction_amount": amount,
+                "source_of_funds_jurisdiction": get_random_jurisdiction("MEDIUM_RISK"),
+                "date": (current_date - timedelta(days=days_offset)).isoformat()
+            })
+    
+    # Sort transactions by date
+    transactions.sort(key=lambda x: x["date"], reverse=True)
+    
+    return {
+        "scenario": {
+            "id": scenario_id,
+            "name": scenario["name"],
+            "description": scenario["description"],
+            "threshold": scenario["threshold"],
+            "time_window_days": scenario["time_window_days"]
+        },
+        "alert_id": str(uuid4()),
+        "transactions": transactions
     }
